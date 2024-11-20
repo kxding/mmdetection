@@ -361,7 +361,7 @@ class DetInferencer(BaseInferencer):
             visualize_kwargs,
             postprocess_kwargs,
         ) = self._dispatch_kwargs(**kwargs)
-
+        # __import__("ipdb").set_trace()
         ori_inputs = self._inputs_to_list(inputs)
 
         if texts is not None and isinstance(texts, str):
@@ -401,6 +401,7 @@ class DetInferencer(BaseInferencer):
         for ori_imgs, data in (track(inputs, description='Inference')
                                if self.show_progress else inputs):
             preds = self.forward(data, **forward_kwargs)
+            # __import__("ipdb").set_trace()
             visualization = self.visualize(
                 ori_imgs,
                 preds,
@@ -470,6 +471,7 @@ class DetInferencer(BaseInferencer):
                              'defined in the config, but got None.')
 
         results = []
+        # __import__("ipdb").set_trace()
 
         for single_input, pred in zip(inputs, preds):
             if isinstance(single_input, str):
@@ -487,7 +489,7 @@ class DetInferencer(BaseInferencer):
 
             out_file = osp.join(img_out_dir, 'vis',
                                 img_name) if img_out_dir != '' else None
-
+            # __import__("ipdb").set_trace()
             self.visualizer.add_datasample(
                 img_name,
                 img,
@@ -563,8 +565,8 @@ class DetInferencer(BaseInferencer):
                           'Prediction results are not saved!')
         # Add img to the results after printing and dumping
         result_dict['predictions'] = results
-        if print_result:
-            print(result_dict)
+        # if print_result:
+        #     print(result_dict)
         result_dict['visualization'] = visualization
         return result_dict
 
@@ -610,10 +612,31 @@ class DetInferencer(BaseInferencer):
         if 'pred_instances' in data_sample:
             masks = data_sample.pred_instances.get('masks')
             pred_instances = data_sample.pred_instances.numpy()
+            threshold = 0.37
+            # threshold = 0.45
+            
+            labels = pred_instances.labels.tolist()
+            scores = pred_instances.scores.tolist()
+            
+            # print("-----------")
+            # print(scores)
+            # print("-----------")
+            
+            final_scores = [] 
+            final_labels = []
+            
+            for index in range(0, len(scores)):
+                if(scores[index] > threshold):
+                    final_scores.append(scores[index])
+                    final_labels.append(labels[index])
             result = {
-                'labels': pred_instances.labels.tolist(),
-                'scores': pred_instances.scores.tolist()
-            }
+                'labels': final_labels,
+                'scores': final_scores
+            }            
+            # result = {
+            #     'labels': pred_instances.labels.tolist(),
+            #     'scores': pred_instances.scores.tolist()
+            # }
             if 'bboxes' in pred_instances:
                 result['bboxes'] = pred_instances.bboxes.tolist()
             if masks is not None:
